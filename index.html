@@ -254,7 +254,7 @@
     </header>
 
     <nav>
-        <!-- Agregado "return false" para evitar el salto al # en la URL -->
+        <!-- Agregado return false; para evitar que la URL se ensucie con un # -->
         <a href="#" onclick="cambiarSeccion('inicio'); return false;">Inicio</a>
         <a href="#" onclick="cambiarSeccion('lectura'); return false;">Lectura Digital</a>
         <a href="#" onclick="cambiarSeccion('audiolibro'); return false;">Audiolibro</a>
@@ -264,7 +264,7 @@
 
     <div id="inicio" class="seccion activa">
         <div class="info-libro">
-            <!-- Sugerencia: Añadir "/" al inicio para rutas absolutas y solucionar error 404 en Vercel -->
+            <!-- Ruta con "/" al inicio para evitar error 404 en Vercel -->
             <img src="/portadas/portada_principal.jpg" alt="Portada Principal de Más Allá del Muro" class="portada-principal-img">
             
             <div class="info-texto-container">
@@ -384,13 +384,28 @@
     </footer>
 
 <script>
-    // 1. CONFIGURACIÓN DE SUPABASE (Arreglado: var en lugar de let para evitar errores de redeclaración)
+    // 1. DECLARAR LA NAVEGACIÓN AL INICIO (Para que el menú nunca falle)
+    window.cambiarSeccion = function(idSeccion) {
+        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
+        document.getElementById(idSeccion).classList.add('activa');
+        if(idSeccion === 'lectura') regresarAlMenu('lectura');
+    }
+
+    // 2. CONFIGURACIÓN DE SUPABASE (Ahora segura contra errores de carga nula)
     const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; // COMPLETA TU LLAVE AQUÍ
+    // ⚠️ ¡NO OLVIDES REEMPLAZAR ESTA CLAVE CON TU CLAVE ANÓNIMA DE SUPABASE REAL!
+    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
     
     var supabase = null;
-    if (typeof window.supabase !== 'undefined') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Verificamos que la librería de Supabase haya cargado correctamente (Evitando el error "null")
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (error) {
+            console.error("Error al conectar con Supabase:", error);
+        }
+    } else {
+        console.warn("La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.");
     }
 
     // Base de datos de capítulos unificada para el índice
@@ -438,13 +453,6 @@
                 limpiarCheckmarks();
             }
         });
-    }
-
-    // Navegación entre secciones (Ahora definida como global para que el HTML la encuentre)
-    window.cambiarSeccion = function(idSeccion) {
-        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
-        document.getElementById(idSeccion).classList.add('activa');
-        if(idSeccion === 'lectura') regresarAlMenu('lectura');
     }
 
     // Renderizar cuadrícula de lectura
