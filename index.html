@@ -94,7 +94,6 @@
             margin-bottom: 1rem;
         }
 
-        /* Indicador visual de capítulo completado */
         .check-progreso {
             position: absolute;
             top: 10px;
@@ -112,23 +111,22 @@
             z-index: 10;
         }
 
-        /* Ajuste: Justificado y márgenes limpios para la lectura */
         .vista-contenido {
             display: none;
             background: white;
-            padding: 3rem 4rem; /* Margen amplio para simular lectura de libro */
+            padding: 3rem 4rem;
             border: 1px solid #e0e0e0;
             margin-top: 2rem;
             box-sizing: border-box;
         }
 
         #cuerpo-capitulo-texto {
-            text-align: justify; /* Justificado */
+            text-align: justify;
             text-justify: inter-word;
             font-size: 1.15rem;
             max-width: 700px;
-            margin: 2rem auto 0 auto; /* Centrado y con margen superior e inferior */
-            white-space: pre-line; /* Mantiene los saltos de línea del archivo de texto plano */
+            margin: 2rem auto 0 auto;
+            white-space: pre-line;
         }
 
         .reproductor-audio {
@@ -165,7 +163,6 @@
             flex-grow: 1;
         }
 
-        /* Estilos del sistema de cuenta y formularios */
         .contenedor-auth, .form-soporte {
             background: white;
             padding: 2rem;
@@ -243,7 +240,6 @@
             .reproductor-audio { flex-direction: column; gap: 1rem; align-items: flex-start; }
             .reproductor-audio audio { width: 100%; }
             #titulo-capitulo-texto { font-size: 1.5rem !important; }
-            .vista-contenido { padding: 2rem 1rem; }
             #cuerpo-capitulo-texto { font-size: 1.05rem !important; line-height: 1.75 !important; }
         }
     </style>
@@ -297,7 +293,7 @@
                 <div><strong>Autor:</strong><br>Jorge Omar Osorio Parada</div>
                 <div><strong>Institución:</strong><br>Grupo Educativo Siglo 21</div>
                 <div><strong>Formato de Entrega:</strong><br>Proyecto de Titulación Multiformato</div>
-                <div><strong>Año de Producción:</strong><br>2026</div>
+                <div><strong>Año de Production:</strong><br>2026</div>
             </div>
         </div>
     </div>
@@ -386,10 +382,7 @@
 
 <script>
     // 1. CONFIGURACIÓN DE SUPABASE
-    // 1. CONFIGURACIÓN DE SUPABASE (Actualizado con tus credenciales reales)
     const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
-    
-    // Usamos la llave pública Anon que se muestra en tu captura de pantalla de Supabase
     const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
     
     let supabase = null;
@@ -397,28 +390,28 @@
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    // Base de datos de capítulos unificada para el índice (Los textos se cargan dinámicamente desde /Caps/)
+    // Base de datos de capítulos unificada para el índice (Rutas corregidas)
     const capitulos = [
-        { numero: 1, titulo: "Capítulo 1: La Torre de Fortuna", archivoAudio: "audios/capitulo1.mp3" },
-        { numero: 2, titulo: "Capítulo 2: Los Sectores Bajos", archivoAudio: "audios/capitulo2.mp3" },
-        { numero: 3, titulo: "Capítulo 3: El Distrito Periférico", archivoAudio: "audios/capitulo3.mp3" },
-        { numero: 4, titulo: "Capítulo 4: Sombras en el Muro", archivoAudio: "audios/capitulo4.mp3" },
-        { numero: 5, titulo: "Capítulo 5: Infiltración", archivoAudio: "audios/capitulo5.mp3" },
-        { numero: 6, titulo: "Capítulo 6: Luces de Fortuna", archivoAudio: "audios/capitulo6.mp3" },
-        { numero: 7, titulo: "Capítulo 7: La Apuesta Temeraria", archivoAudio: "audios/capitulo7.mp3" },
-        { numero: 8, titulo: "Capítulo 8: Secretos de la Torre", archivoAudio: "audios/capitulo8.mp3" },
-        { numero: 9, titulo: "Capítulo 9: El Reclutamiento", archivoAudio: "audios/capitulo9.mp3" },
-        { numero: 10, titulo: "Capítulo 10: Lazos de Sangre", archivoAudio: "audios/capitulo10.mp3" },
-        { numero: 11, titulo: "Capítulo 11: Juegos de Poder", archivoAudio: "audios/capitulo11.mp3" },
-        { numero: 12, titulo: "Capítulo 12: Rebelión Silenciosa", archivoAudio: "audios/capitulo12.mp3" },
-        { numero: 13, titulo: "Capítulo 13: La Caída del Azar", archivoAudio: "audios/capitulo13.mp3" },
-        { numero: 14, titulo: "Capítulo 14: El Manuscrito Oculto", archivoAudio: "audios/capitulo14.mp3" },
-        { numero: 15, titulo: "Capítulo 15: Traición en la Cumbre", archivoAudio: "audios/capitulo15.mp3" },
-        { numero: 16, titulo: "Capítulo 16: El Escape Imposible", archivoAudio: "audios/capitulo16.mp3" },
-        { numero: 17, titulo: "Capítulo 17: Ecos de Astra", archivoAudio: "audios/capitulo17.mp3" },
-        { numero: 18, titulo: "Capítulo 18: La Grieta del Control", archivoAudio: "audios/capitulo18.mp3" },
-        { numero: 19, titulo: "Capítulo 19: El Enfrentamiento Final", archivoAudio: "audios/capitulo19.mp3" },
-        { numero: 20, titulo: "Capítulo 20: El Horizonte Libre", archivoAudio: "audios/capitulo20.mp3" }
+        { numero: 1, titulo: "Capítulo 1: La Torre de Fortuna", archivoAudio: "audios/audio1.mp3" },
+        { numero: 2, titulo: "Capítulo 2: Los Sectores Bajos", archivoAudio: "audios/audio2.mp3" },
+        { numero: 3, titulo: "Capítulo 3: El Distrito Periférico", archivoAudio: "audios/audio3.mp3" },
+        { numero: 4, titulo: "Capítulo 4: Sombras en el Muro", archivoAudio: "audios/audio4.mp3" },
+        { numero: 5, titulo: "Capítulo 5: Infiltración", archivoAudio: "audios/audio5.mp3" },
+        { numero: 6, titulo: "Capítulo 6: Luces de Fortuna", archivoAudio: "audios/audio6.mp3" },
+        { numero: 7, titulo: "Capítulo 7: La Apuesta Temeraria", archivoAudio: "audios/audio7.mp3" },
+        { numero: 8, titulo: "Capítulo 8: Secretos de la Torre", archivoAudio: "audios/audio8.mp3" },
+        { numero: 9, titulo: "Capítulo 9: El Reclutamiento", archivoAudio: "audios/audio9.mp3" },
+        { numero: 10, titulo: "Capítulo 10: Lazos de Sangre", archivoAudio: "audios/audio10.mp3" },
+        { numero: 11, titulo: "Capítulo 11: Juegos de Poder", archivoAudio: "audios/audio11.mp3" },
+        { numero: 12, titulo: "Capítulo 12: Rebelión Silenciosa", archivoAudio: "audios/audio12.mp3" },
+        { numero: 13, titulo: "Capítulo 13: La Caída del Azar", archivoAudio: "audios/audio13.mp3" },
+        { numero: 14, titulo: "Capítulo 14: El Manuscrito Oculto", archivoAudio: "audios/audio14.mp3" },
+        { numero: 15, titulo: "Capítulo 15: Traición en la Cumbre", archivoAudio: "audios/audio15.mp3" },
+        { numero: 16, titulo: "Capítulo 16: El Escape Imposible", archivoAudio: "audios/audio16.mp3" },
+        { numero: 17, titulo: "Capítulo 17: Ecos de Astra", archivoAudio: "audios/audio17.mp3" },
+        { numero: 18, titulo: "Capítulo 18: La Grieta del Control", archivoAudio: "audios/audio18.mp3" },
+        { numero: 19, titulo: "Capítulo 19: El Enfrentamiento Final", archivoAudio: "audios/audio19.mp3" },
+        { numero: 20, titulo: "Capítulo 20: El Horizon Libre", archivoAudio: "audios/audio20.mp3" }
     ];
 
     let usuarioLogueado = null;
@@ -520,7 +513,7 @@
         }
     };
 
-    // Renderizar lista de audiolibro
+    // Renderizar lista de audiolibro e inyectar eventos de manera segura
     const listaAudio = document.getElementById('lista-audio');
     capitulos.forEach(cap => {
         const itemAudio = document.createElement('div');
@@ -533,7 +526,6 @@
         `;
         listaAudio.appendChild(itemAudio);
 
-        // Asignación directa e inmediata sin listeners globales anidados
         const elAudio = itemAudio.querySelector('audio');
         if (elAudio) {
             elAudio.onended = async () => {
@@ -556,29 +548,6 @@
                 }
             };
         }
-    });
-
-        // Evento de finalización asignado de manera segura tras la carga del DOM
-        window.addEventListener('DOMContentLoaded', () => {
-            const elAudio = document.getElementById(`audio-track-${cap.numero}`);
-            if(elAudio) {
-                elAudio.onended = async () => {
-                    if (usuarioLogueado) {
-                        await fetch('/api/progreso', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                user_id: usuarioLogueado.id,
-                                capitulo_id: cap.numero,
-                                leido: false,
-                                escuchado: true
-                            })
-                        });
-                        console.log(`Audio del capítulo ${cap.numero} completado.`);
-                    }
-                };
-            }
-        });
     });
 
     function regresarAlMenu(tipo) {
