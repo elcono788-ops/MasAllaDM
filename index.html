@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MADM - Jorge Osorio</title>
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <!-- Se eliminó el script de Supabase del head para cargarlo dinámicamente y seguro en el JS -->
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
@@ -384,62 +384,72 @@
     </footer>
 
 <script>
-    // 1. CARGAR SUPABASE DE FORMA DINÁMICA Y SEGURA
-function cargarSupabase() {
-    return new Promise((resolver, rechazar) => {
-        const script = document.createElement('script');
-        // Usamos esta URL que ha funcionado en pruebas anteriores para forzar la carga global
-        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
-        script.onload = () => {
-            if (window.supabase && typeof window.supabase.createClient === 'function') {
-                resolver(window.supabase);
-            } else {
-                rechazar(new Error("El script cargó pero no expuso la variable 'window.supabase'"));
-            }
-        };
-        script.onerror = () => rechazar(new Error("No se pudo descargar el script de Supabase"));
-        document.head.appendChild(script);
-    });
-}
+    // 1. DECLARAR LA NAVEGACIÓN AL INICIO (Para que el menú nunca falle, incluso si Supabase se cae)
+    window.cambiarSeccion = function(idSeccion) {
+        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
+        document.getElementById(idSeccion).classList.add('activa');
+        if(idSeccion === 'lectura') regresarAlMenu('lectura');
+    }
 
-// 2. CONFIGURACIÓN DE SUPABASE (Ejecutada después de cargar la librería)
-const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
-const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; // ¡Asegúrate de que aquí esté tu clave completa!
+    // 2. DEFINIR VARIABLES GLOBALES
+    // ¡ATENCIÓN!: Esta variable se declara UNA SOLA VEZ aquí. Nunca la repitas en otro lado del script.
+    let supabase = null; 
+    let usuarioLogueado = null;
+    let capituloActualAbierto = null;
 
-let supabase = null;
+    const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
+    // ⚠️ REEMPLAZA ESTO POR TU CLAVE REAL DE SUPABASE (Sin los puntos suspensivos)
+    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
 
-// Inicializamos todo solo después de que la librería haya cargado
-cargarSupabase()
-    .then((libSupabase) => {
-        supabase = libSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log("✅ Conexión con Supabase establecida correctamente.");
-        
-        // Aquí iniciamos la lógica de autenticación solo si tenemos conexión
-        if (supabase) {
-            supabase.auth.onAuthStateChange((event, session) => {
-                if (session) {
-                    usuarioLogueado = session.user;
-                    document.getElementById('status-usuario').innerText = `Cuenta activa: ${usuarioLogueado.email}`;
-                    document.getElementById('contacto-email').value = usuarioLogueado.email;
-                    document.getElementById('auth-anonimo').style.display = 'none';
-                    document.getElementById('auth-perfil').style.display = 'block';
-                    cargarProgresoDesdeServidor();
+    // 3. CARGAR SUPABASE DE FORMA DINÁMICA Y SEGURA
+    function cargarSupabase() {
+        return new Promise((resolver, rechazar) => {
+            const script = document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
+            script.onload = () => {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    resolver(window.supabase);
                 } else {
-                    usuarioLogueado = null;
-                    document.getElementById('status-usuario').innerText = "";
-                    document.getElementById('auth-anonimo').style.display = 'block';
-                    document.getElementById('auth-perfil').style.display = 'none';
-                    limpiarCheckmarks();
+                    rechazar(new Error("El script cargó pero no expuso la variable 'window.supabase'"));
                 }
-            });
-        }
-    })
-    .catch((error) => {
-        // Si falla la carga, mostramos un aviso en la consola (pero la página NO se rompe)
-        console.warn("⚠️ La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.", error.message);
-    });
+            };
+            script.onerror = () => rechazar(new Error("No se pudo descargar el script de Supabase"));
+            document.head.appendChild(script);
+        });
+    }
 
-    // Base de datos de capítulos unificada para el índice
+    // 4. CONFIGURACIÓN DE AUTENTICACIÓN (Solo se ejecutará si la librería de Supabase carga)
+    cargarSupabase()
+        .then((libSupabase) => {
+            supabase = libSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log("✅ Conexión con Supabase establecida correctamente.");
+            
+            if (supabase) {
+                supabase.auth.onAuthStateChange((event, session) => {
+                    if (session) {
+                        usuarioLogueado = session.user;
+                        document.getElementById('status-usuario').innerText = `Cuenta activa: ${usuarioLogueado.email}`;
+                        document.getElementById('contacto-email').value = usuarioLogueado.email;
+                        document.getElementById('auth-anonimo').style.display = 'none';
+                        document.getElementById('auth-perfil').style.display = 'block';
+                        cargarProgresoDesdeServidor();
+                    } else {
+                        usuarioLogueado = null;
+                        document.getElementById('status-usuario').innerText = "";
+                        document.getElementById('auth-anonimo').style.display = 'block';
+                        document.getElementById('auth-perfil').style.display = 'none';
+                        limpiarCheckmarks();
+                    }
+                });
+            }
+        })
+        .catch((error) => {
+            // Si falla la carga, no pasa nada. El menú de navegación ya se cargó (en el paso 1).
+            console.warn("⚠️ La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.", error.message);
+        });
+
+    // --- A PARTIR DE AQUÍ, EL RESTO DE LA LÓGICA DE LA WEB ---
+
     const capitulos = [
         { numero: 1, titulo: "Capítulo 1: La Torre de Fortuna", archivoAudio: "audios/audio1.mp3" },
         { numero: 2, titulo: "Capítulo 2: Los Sectores Bajos", archivoAudio: "audios/audio2.mp3" },
@@ -462,29 +472,6 @@ cargarSupabase()
         { numero: 19, titulo: "Capítulo 19: El Enfrentamiento Final", archivoAudio: "audios/audio19.mp3" },
         { numero: 20, titulo: "Capítulo 20: El Horizon Libre", archivoAudio: "audios/audio20.mp3" }
     ];
-
-    let usuarioLogueado = null;
-    let capituloActualAbierto = null;
-
-    // Monitoreo de autenticación en Supabase
-    if (supabase) {
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                usuarioLogueado = session.user;
-                document.getElementById('status-usuario').innerText = `Cuenta activa: ${usuarioLogueado.email}`;
-                document.getElementById('contacto-email').value = usuarioLogueado.email;
-                document.getElementById('auth-anonimo').style.display = 'none';
-                document.getElementById('auth-perfil').style.display = 'block';
-                cargarProgresoDesdeServidor();
-            } else {
-                usuarioLogueado = null;
-                document.getElementById('status-usuario').innerText = "";
-                document.getElementById('auth-anonimo').style.display = 'block';
-                document.getElementById('auth-perfil').style.display = 'none';
-                limpiarCheckmarks();
-            }
-        });
-    }
 
     // Renderizar cuadrícula de lectura
     const gridTexto = document.getElementById('grid-texto');
@@ -555,7 +542,7 @@ cargarSupabase()
         }
     };
 
-    // Renderizar lista de audiolibro e inyectar eventos de manera segura
+    // Renderizar lista de audiolibro
     const listaAudio = document.getElementById('lista-audio');
     capitulos.forEach(cap => {
         const itemAudio = document.createElement('div');
@@ -599,13 +586,13 @@ cargarSupabase()
         }
     }
 
-    // Lógica del formulario de autenticación (Login/Registro)
+    // Lógica del formulario de autenticación (Login)
     document.getElementById('form-login').onsubmit = async (e) => {
         e.preventDefault();
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;
 
-        if(!supabase) return alert("Error: Conexión con Supabase no inicializada.");
+        if(!supabase) return alert("Error: La librería de Supabase no ha terminado de cargar. Intenta recargar la página.");
         
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) alert(`Error de acceso: ${error.message}`);
@@ -616,7 +603,7 @@ cargarSupabase()
         const password = document.getElementById('auth-password').value;
 
         if(!email || !password) return alert("Por favor ingresa un correo y contraseña.");
-        if(!supabase) return;
+        if(!supabase) return alert("Error: La librería de Supabase no ha terminado de cargar.");
 
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) {
