@@ -46,6 +46,7 @@
             font-size: 0.9rem;
             letter-spacing: 1px;
             text-align: center;
+            cursor: pointer;
         }
 
         nav a:hover {
@@ -253,15 +254,17 @@
     </header>
 
     <nav>
-        <a href="#" onclick="cambiarSeccion('inicio')">Inicio</a>
-        <a href="#" onclick="cambiarSeccion('lectura')">Lectura Digital</a>
-        <a href="#" onclick="cambiarSeccion('audiolibro')">Audiolibro</a>
-        <a href="#" onclick="cambiarSeccion('cuenta')">Mi Cuenta</a>
-        <a href="#" onclick="cambiarSeccion('contacto')">Contacto</a>
+        <!-- Agregado "return false" para evitar el salto al # en la URL -->
+        <a href="#" onclick="cambiarSeccion('inicio'); return false;">Inicio</a>
+        <a href="#" onclick="cambiarSeccion('lectura'); return false;">Lectura Digital</a>
+        <a href="#" onclick="cambiarSeccion('audiolibro'); return false;">Audiolibro</a>
+        <a href="#" onclick="cambiarSeccion('cuenta'); return false;">Mi Cuenta</a>
+        <a href="#" onclick="cambiarSeccion('contacto'); return false;">Contacto</a>
     </nav>
 
     <div id="inicio" class="seccion activa">
         <div class="info-libro">
+            <!-- Sugerencia: Añadir "/" al inicio para rutas absolutas y solucionar error 404 en Vercel -->
             <img src="/portadas/portada_principal.jpg" alt="Portada Principal de Más Allá del Muro" class="portada-principal-img">
             
             <div class="info-texto-container">
@@ -293,7 +296,7 @@
                 <div><strong>Autor:</strong><br>Jorge Omar Osorio Parada</div>
                 <div><strong>Institución:</strong><br>Grupo Educativo Siglo 21</div>
                 <div><strong>Formato de Entrega:</strong><br>Proyecto de Titulación Multiformato</div>
-                <div><strong>Año de Producción:</strong><br>2026</div>
+                <div><strong>Año de Production:</strong><br>2026</div>
             </div>
         </div>
     </div>
@@ -381,12 +384,14 @@
     </footer>
 
 <script>
-    // 1. CONFIGURACIÓN ÚNICA DE SUPABASE
+    // 1. CONFIGURACIÓN DE SUPABASE (Arreglado: var en lugar de let para evitar errores de redeclaración)
     const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
+    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; // COMPLETA TU LLAVE AQUÍ
     
-    // Declaración única e inicialización directa para evitar errores de colisión sintáctica
-    const supabase = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    var supabase = null;
+    if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
     // Base de datos de capítulos unificada para el índice
     const capitulos = [
@@ -415,16 +420,6 @@
     let usuarioLogueado = null;
     let capituloActualAbierto = null;
 
-    // Navegación entre secciones (Mapeada arriba de ejecuciones dinámicas)
-    function cambiarSeccion(idSeccion) {
-        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
-        const seccionObjetivo = document.getElementById(idSeccion);
-        if (seccionObjetivo) {
-            seccionObjetivo.classList.add('activa');
-        }
-        if(idSeccion === 'lectura') regresarAlMenu('lectura');
-    }
-
     // Monitoreo de autenticación en Supabase
     if (supabase) {
         supabase.auth.onAuthStateChange((event, session) => {
@@ -443,6 +438,13 @@
                 limpiarCheckmarks();
             }
         });
+    }
+
+    // Navegación entre secciones (Ahora definida como global para que el HTML la encuentre)
+    window.cambiarSeccion = function(idSeccion) {
+        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
+        document.getElementById(idSeccion).classList.add('activa');
+        if(idSeccion === 'lectura') regresarAlMenu('lectura');
     }
 
     // Renderizar cuadrícula de lectura
