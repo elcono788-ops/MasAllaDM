@@ -384,29 +384,60 @@
     </footer>
 
 <script>
-    // 1. DECLARAR LA NAVEGACIÓN AL INICIO (Para que el menú nunca falle)
-    window.cambiarSeccion = function(idSeccion) {
-        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
-        document.getElementById(idSeccion).classList.add('activa');
-        if(idSeccion === 'lectura') regresarAlMenu('lectura');
-    }
+    // 1. CARGAR SUPABASE DE FORMA DINÁMICA Y SEGURA
+function cargarSupabase() {
+    return new Promise((resolver, rechazar) => {
+        const script = document.createElement('script');
+        // Usamos esta URL que ha funcionado en pruebas anteriores para forzar la carga global
+        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
+        script.onload = () => {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                resolver(window.supabase);
+            } else {
+                rechazar(new Error("El script cargó pero no expuso la variable 'window.supabase'"));
+            }
+        };
+        script.onerror = () => rechazar(new Error("No se pudo descargar el script de Supabase"));
+        document.head.appendChild(script);
+    });
+}
 
-    // 2. CONFIGURACIÓN DE SUPABASE (Ahora segura contra errores de carga nula)
-    const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
-    // ⚠️ ¡NO OLVIDES REEMPLAZAR ESTA CLAVE CON TU CLAVE ANÓNIMA DE SUPABASE REAL!
-    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
-    
-    var supabase = null;
-    // Verificamos que la librería de Supabase haya cargado correctamente (Evitando el error "null")
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch (error) {
-            console.error("Error al conectar con Supabase:", error);
+// 2. CONFIGURACIÓN DE SUPABASE (Ejecutada después de cargar la librería)
+const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
+const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; // ¡Asegúrate de que aquí esté tu clave completa!
+
+let supabase = null;
+
+// Inicializamos todo solo después de que la librería haya cargado
+cargarSupabase()
+    .then((libSupabase) => {
+        supabase = libSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("✅ Conexión con Supabase establecida correctamente.");
+        
+        // Aquí iniciamos la lógica de autenticación solo si tenemos conexión
+        if (supabase) {
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (session) {
+                    usuarioLogueado = session.user;
+                    document.getElementById('status-usuario').innerText = `Cuenta activa: ${usuarioLogueado.email}`;
+                    document.getElementById('contacto-email').value = usuarioLogueado.email;
+                    document.getElementById('auth-anonimo').style.display = 'none';
+                    document.getElementById('auth-perfil').style.display = 'block';
+                    cargarProgresoDesdeServidor();
+                } else {
+                    usuarioLogueado = null;
+                    document.getElementById('status-usuario').innerText = "";
+                    document.getElementById('auth-anonimo').style.display = 'block';
+                    document.getElementById('auth-perfil').style.display = 'none';
+                    limpiarCheckmarks();
+                }
+            });
         }
-    } else {
-        console.warn("La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.");
-    }
+    })
+    .catch((error) => {
+        // Si falla la carga, mostramos un aviso en la consola (pero la página NO se rompe)
+        console.warn("⚠️ La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.", error.message);
+    });
 
     // Base de datos de capítulos unificada para el índice
     const capitulos = [
