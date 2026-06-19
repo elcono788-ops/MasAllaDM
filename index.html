@@ -262,7 +262,7 @@
 
     <div id="inicio" class="seccion activa">
         <div class="info-libro">
-            <img src="portadas/portada_principal.jpg" alt="Portada Principal de Más Allá del Muro" class="portada-principal-img">
+            <img src="/portadas/portada_principal.jpg" alt="Portada Principal de Más Allá del Muro" class="portada-principal-img">
             
             <div class="info-texto-container">
                 <h2 style="color: var(--color-principal); border-bottom: 2px solid var(--color-secundario); padding-bottom: 0.5rem; margin-top: 0;">Sinopsis General</h2>
@@ -293,7 +293,7 @@
                 <div><strong>Autor:</strong><br>Jorge Omar Osorio Parada</div>
                 <div><strong>Institución:</strong><br>Grupo Educativo Siglo 21</div>
                 <div><strong>Formato de Entrega:</strong><br>Proyecto de Titulación Multiformato</div>
-                <div><strong>Año de Production:</strong><br>2026</div>
+                <div><strong>Año de Producción:</strong><br>2026</div>
             </div>
         </div>
     </div>
@@ -381,16 +381,14 @@
     </footer>
 
 <script>
-    // 1. CONFIGURACIÓN DE SUPABASE
+    // 1. CONFIGURACIÓN ÚNICA DE SUPABASE
     const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
     const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
     
-    let supabase = null;
-    if (typeof window.supabase !== 'undefined') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
+    // Declaración única e inicialización directa para evitar errores de colisión sintáctica
+    const supabase = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    // Base de datos de capítulos unificada para el índice (Rutas corregidas)
+    // Base de datos de capítulos unificada para el índice
     const capitulos = [
         { numero: 1, titulo: "Capítulo 1: La Torre de Fortuna", archivoAudio: "audios/audio1.mp3" },
         { numero: 2, titulo: "Capítulo 2: Los Sectores Bajos", archivoAudio: "audios/audio2.mp3" },
@@ -417,6 +415,16 @@
     let usuarioLogueado = null;
     let capituloActualAbierto = null;
 
+    // Navegación entre secciones (Mapeada arriba de ejecuciones dinámicas)
+    function cambiarSeccion(idSeccion) {
+        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
+        const seccionObjetivo = document.getElementById(idSeccion);
+        if (seccionObjetivo) {
+            seccionObjetivo.classList.add('activa');
+        }
+        if(idSeccion === 'lectura') regresarAlMenu('lectura');
+    }
+
     // Monitoreo de autenticación en Supabase
     if (supabase) {
         supabase.auth.onAuthStateChange((event, session) => {
@@ -437,13 +445,6 @@
         });
     }
 
-    // Navegación entre secciones
-    function cambiarSeccion(idSeccion) {
-        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
-        document.getElementById(idSeccion).classList.add('activa');
-        if(idSeccion === 'lectura') regresarAlMenu('lectura');
-    }
-
     // Renderizar cuadrícula de lectura
     const gridTexto = document.getElementById('grid-texto');
     capitulos.forEach(cap => {
@@ -452,7 +453,7 @@
         tarjeta.id = `tarjeta-txt-${cap.numero}`;
         tarjeta.innerHTML = `
             <div class="check-progreso" id="check-${cap.numero}">✓</div>
-            <img src="portadas/portada${cap.numero}.jpg" alt="Portada Capítulo ${cap.numero}">
+            <img src="/portadas/portada${cap.numero}.jpg" alt="Portada Capítulo ${cap.numero}">
             <strong>${cap.titulo}</strong>
         `;
         tarjeta.onclick = () => abrirCapituloTexto(cap);
