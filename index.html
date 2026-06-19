@@ -660,9 +660,49 @@
         }
     };
 
-    document.getElementById('btn-comprar-stripe').onclick = () => {
-        alert("Enrutando de forma encriptada al portal seguro de procesamiento bancario de Stripe...");
-    };
+    document.getElementById('btn-comprar-stripe').onclick = async () => {
+    if (!usuarioLogueado) {
+        alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' antes de proceder con tu compra.");
+        cambiarSeccion('cuenta');
+        return;
+    }
+
+    const nombre = prompt("Ingresa tu(s) Nombre(s):");
+    const apellido = prompt("Ingresa tus Apellidos:");
+    
+    if (!nombre || !apellido) {
+        alert("Los datos son obligatorios para generar tu orden de transferencia única.");
+        return;
+    }
+
+    try {
+        alert("Generando los datos de transferencia SPEI de Stripe. Por favor espera...");
+        
+        const respuesta = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: usuarioLogueado.id,
+                email: usuarioLogueado.email,
+                nombre: nombre,
+                apellido: apellido
+            })
+        });
+
+        const sesion = await respuesta.json();
+
+        if (sesion.id) {
+            // Inicializa Stripe cargado desde el CDN en tu HTML
+            const stripeCliente = Stripe("TU_CLAVE_PUBLICA_PK_TEST_AQUI");
+            await stripeCliente.redirectToCheckout({ sessionId: sesion.id });
+        } else {
+            alert("No se pudo generar la orden de pago por transferencia.");
+        }
+    } catch (err) {
+        console.error("Error:", err);
+        alert("Ocurrió un fallo de conexión.");
+    }
+};
 </script>
 </body>
 </html>
