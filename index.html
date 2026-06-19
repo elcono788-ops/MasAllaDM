@@ -660,62 +660,21 @@
         }
     };
 
- document.getElementById('btn-comprar-stripe').onclick = async () => {
+ document.getElementById('btn-comprar-stripe').onclick = () => {
     if (!usuarioLogueado) {
-        alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' antes de solicitar tu referencia de pago.");
+        alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' antes de proceder con tu compra.");
         cambiarSeccion('cuenta');
         return;
     }
 
-    const nombre = prompt("Ingresa tu Nombre:");
-    const apellido = prompt("Ingresa tu Apellido:");
-    
-    if (!nombre || !apellido) {
-        alert("El nombre y apellido son obligatorios para generar tu referencia personalizada.");
-        return;
-    }
+    // Codificar parámetros de forma segura para la URL
+    const params = new URLSearchParams({
+        userId: usuarioLogueado.id,
+        email: usuarioLogueado.email
+    });
 
-    try {
-        alert("Generando tu referencia de transferencia única...");
-        
-        const respuesta = await fetch('/api/crear-orden-manual', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: usuarioLogueado.id,
-                email: usuarioLogueado.email,
-                nombre: nombre,
-                apellido: apellido
-            })
-        });
-
-        const datosOrden = await respuesta.json();
-
-        if (datosOrden.success) {
-            // Mostramos los datos bancarios y la referencia en pantalla
-            alert(`
-       ■ ORDEN DE TRANSFERENCIA GENERADA ■
-       --------------------------------------------------
-       Por favor, realiza tu pago con los siguientes datos:
-       
-       Banco: BBVA
-       CLABE: 012 180 01535337207 4
-       Beneficiario: Jorge Osorio
-       Monto: $100.00 MXN
-       
-       ⚠️ MUY IMPORTANTE ⚠️
-       En el "Concepto de Pago" de tu banco debes poner exactamente:
-       ${datosOrden.referencia}
-       
-       Te hemos enviado también estas instrucciones a tu correo electrónico. Una vez que verifiquemos el depósito, se te liberará el PDF automáticamente.
-            `);
-        } else {
-            alert("Error al generar la orden: " + datosOrden.error);
-        }
-    } catch (err) {
-        console.error("Error:", err);
-        alert("Ocurrió un fallo de conexión al procesar la orden.");
-    }
+    // Abre el proceso de compra en una nueva pestaña del navegador
+    window.open(`/checkout.html?${params.toString()}`, '_blank');
 };
 </script>
 </body>
