@@ -1,47 +1,59 @@
-import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 
-// Configuración del transportador de nodemailer usando variables de entorno
-const transporter = nodemailer.createTransport({
-  host: process.env.CORREO_HOST, // Ej: smtp.gmail.com
-  port: parseInt(process.env.CORREO_PORT || '465'),
-  secure: process.env.CORREO_SECURE === 'true', // true para puerto 465, false para otros
-  auth: {
-    user: process.env.CORREO_EMISOR,
-    pass: process.env.CORREO_PASSWORD, // Contraseña de aplicación
-  },
-});
+// Usamos los nombres exactos de las variables que ya están en tu panel de Vercel
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_nadm005_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_nadm005_SUPABASE_ANON_KEY
+);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
+  // Permitir solo peticiones POST (para guardar) y GET (para consultar)
+  if (req.method === 'POST') {
+    try {
+      const { user_id, capitulo_id, escuchado, leido } = req.body;
 
-  try {
-    const { email, tipo, mensaje } = req.body;
+      if (!user_id || !capitulo_id) {
+        return res.status(400).json({ error: 'Faltan parámetros requeridos' });
+      }
 
-    if (!email || !tipo || !mensaje) {
-      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+      // Guardar o actualizar el progreso en Supabase
+      const { data, error } = await supabase
+        .from('progreso_lectura')
+        .upsert(
+          { user_id, capitulo_id, escuchado, leido, ultimo_cambio: new Date() },
+          { onConflict: 'user_id,capitulo_id' }
+        )
+        .select();
+
+      if (error) throw error;
+
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
     }
+  } 
+  
+  if (req.method === 'GET') {
+    try {
+      const { user_id } = req.query;
 
-    const mailOptions = {
-      from: `"Portal Más Allá del Muro" <${process.env.CORREO_EMISOR}>`,
-      to: process.env.CORREO_EMISOR,
-      subject: `Nueva ${tipo} de lector - Más Allá del Muro`,
-      html: `
-        <h2>Nuevo mensaje recibido desde la página web</h2>
-        <p><strong>Remitente (Lector):</strong> ${email}</p>
-        <p><strong>Tipo de mensaje:</strong> ${tipo}</p>
-        <p><strong>Mensaje:</strong></p>
-        <div style="padding: 15px; background-color: #f4f4f4; border-left: 4px solid #123456;">
-          ${mensaje.replace(/\n/g, '<br>')}
-        </div>
-      `
-    };
+      if (!user_id) {
+        return res.status(400).json({ error: 'Falta el ID de usuario' });
+      }
 
-    await transporter.sendMail(mailOptions);
+      // Obtener todo el progreso de este usuario
+      const { data, error } = await supabase
+        .from('progreso_lectura')
+        .select('capitulo_id, escuchado, leido')
+        .eq('user_id', user_id);
 
-    return res.status(200).json({ success: true, message: 'Mensaje enviado con éxito' });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+      if (error) throw error;
+
+      return res.status(200).json({ success: true, progreso: data });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
   }
+
+  return res.status(405).json({ error: 'Método no permitido' });
 }
