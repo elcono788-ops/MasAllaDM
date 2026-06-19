@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MADM - Jorge Osorio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        :root {
+            --color-principal: #0d2c27;
+            --color-secundario: #d4a34f;
+            --color-acento: #16423c;
+            --color-fondo: #fcfbfa;
+            --fuente: 'Georgia', serif;
+        }
+
+        body {
+            font-family: var(--fuente);
+            margin: 0;
+            padding: 0;
+            background-color: var(--color-fondo);
+            color: var(--color-principal);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--color-principal);
+            color: var(--color-secundario);
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            background-color: var(--color-acento);
+        }
+
+        nav a {
+            color: var(--color-secundario);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        nav a:hover {
+            background-color: var(--color-principal);
+        }
+
+        .seccion {
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            display: none;
+            box-sizing: border-box;
+        }
+
+        .seccion.activa {
+            display: block;
+        }
+
+        .grid-capitulos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .tarjeta-capitulo {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .tarjeta-capitulo:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .tarjeta-capitulo img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        /* Indicador visual de capítulo completado */
+        .check-progreso {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #2e7d32;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        /* Ajuste: Justificado y márgenes limpios para la lectura */
+        .vista-contenido {
+            display: none;
+            background: white;
+            padding: 3rem 4rem; /* Margen amplio para simular lectura de libro */
+            border: 1px solid #e0e0e0;
+            margin-top: 2rem;
+            box-sizing: border-box;
+        }
+
+        #cuerpo-capitulo-texto {
+            text-align: justify; /* Justificado */
+            text-justify: inter-word;
+            font-size: 1.15rem;
+            max-width: 700px;
+            margin: 2rem auto 0 auto; /* Centrado y con margen superior e inferior */
+            white-space: pre-line; /* Mantiene los saltos de línea del archivo de texto plano */
+        }
+
+        .reproductor-audio {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 1rem 2rem;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+
+        .reproductor-audio audio {
+            width: 70%;
+        }
+
+        .info-libro {
+            display: flex;
+            flex-direction: row;
+            gap: 3rem;
+            align-items: flex-start;
+        }
+
+        .portada-principal-img {
+            width: 280px;
+            height: auto;
+            border: 1px solid rgba(212, 163, 79, 0.3);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .info-texto-container {
+            flex-grow: 1;
+        }
+
+        /* Estilos del sistema de cuenta y formularios */
+        .contenedor-auth, .form-soporte {
+            background: white;
+            padding: 2rem;
+            border: 1px solid #e5e2da;
+            border-radius: 6px;
+            max-width: 450px;
+            margin: 2rem auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        .campo-form {
+            margin-bottom: 1.2rem;
+        }
+
+        .campo-form label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+            font-weight: bold;
+        }
+
+        .campo-form input, .campo-form textarea, .campo-form select {
+            width: 100%;
+            padding: 0.7rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .btn-accion {
+            width: 100%;
+            background-color: var(--color-principal);
+            color: var(--color-secundario);
+            padding: 0.8rem;
+            border: 1px solid var(--color-secundario);
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-regresar {
+            background: var(--color-principal);
+            color: var(--color-secundario);
+            border: 1px solid var(--color-secundario);
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: var(--fuente);
+            transition: all 0.2s;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.8rem;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 5rem;
+        }
+
+        @media (max-width: 768px) {
+            header p { font-size: 0.95rem; padding: 0 0.5rem; }
+            nav a { padding: 0.8rem 1rem; font-size: 0.8rem; flex-basis: 45%; }
+            .seccion { margin: 1.5rem auto; padding: 0 1.2rem; }
+            .info-libro { flex-direction: column; align-items: center; gap: 2rem; }
+            .portada-principal-img { width: 200px; margin: 0 auto; }
+            .info-texto-container { width: 100%; }
+            .info-texto-container h2 { text-align: center; }
+            .info-texto-container p { font-size: 1rem; line-height: 1.65; }
+            .info-texto-container div { text-align: center; }
+            .info-texto-container a { display: block !important; text-align: center; padding: 0.8rem 1rem !important; }
+            .vista-contenido { padding: 2rem 1.5rem; }
+            .reproductor-audio { flex-direction: column; gap: 1rem; align-items: flex-start; }
+            .reproductor-audio audio { width: 100%; }
+            #titulo-capitulo-texto { font-size: 1.5rem !important; }
+            .vista-contenido { padding: 2rem 1rem; }
+            #cuerpo-capitulo-texto { font-size: 1.05rem !important; line-height: 1.75 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Más Allá del Muro</h1>
+        <p>Explora Más Allá del Muro — Por Jorge Omar Osorio Parada</p>
+        <div id="status-usuario" style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-secundario);"></div>
+    </header>
+
+    <nav>
+        <a href="#" onclick="cambiarSeccion('inicio')">Inicio</a>
+        <a href="#" onclick="cambiarSeccion('lectura')">Lectura Digital</a>
+        <a href="#" onclick="cambiarSeccion('audiolibro')">Audiolibro</a>
+        <a href="#" onclick="cambiarSeccion('cuenta')">Mi Cuenta</a>
+        <a href="#" onclick="cambiarSeccion('contacto')">Contacto</a>
+    </nav>
+
+    <div id="inicio" class="seccion activa">
+        <div class="info-libro">
+            <img src="portadas/portada_principal.jpg" alt="Portada Principal de Más Allá del Muro" class="portada-principal-img">
+            
+            <div class="info-texto-container">
+                <h2 style="color: var(--color-principal); border-bottom: 2px solid var(--color-secundario); padding-bottom: 0.5rem; margin-top: 0;">Sinopsis General</h2>
+                <p style="text-align: justify; font-size: 1.05rem; color: #333;"><em>Más Allá del Muro</em> es una obra de ficción distópica que aborda temas como la desigualdad social, el abuso de poder, la manipulación política y los conflictos entre clases sociales a través de una narrativa centrada en personajes que viven en una ciudad dividida por un enorme muro...</p>
+                
+                <h3 style="color: var(--color-principal); margin-top: 2rem;">Características del Proyecto Transmedia</h3>
+                <ul style="padding-left: 1.2rem; color: #444;">
+                    <li style="margin-bottom: 0.5rem;"><strong>Edición Física:</strong> Libro impreso maquetado bajo estándares editoriales.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Versión Digital:</strong> Lectura fluida optimizada para entornos web e interactivos.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Audiolibro:</strong> Producción y adaptación sonora dedicada para una experiencia inmersiva.</li>
+                </ul>
+
+                <div style="margin-top: 2.5rem; background: #fdfaf4; padding: 1.5rem; border: 1px dashed var(--color-secundario); border-radius: 4px;">
+                    <p style="margin-top: 0; font-weight: bold;">Obtén el Manuscrito Completo de la Novela en PDF</p>
+                    <p style="font-size: 0.9rem; color: #555; margin-bottom: 1.5rem;">Adquiérelo por una aportación mínima de <strong>$100.00 MXN</strong> de forma 100% encriptada y segura.</p>
+                    <button id="btn-comprar-stripe" class="btn-accion" style="max-width: 280px;">
+                        Comprar Versión PDF ($100 MXN)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e0ded6; margin: 4rem 0;">
+
+        <div style="background-color: #f4f2eb; padding: 2.5rem; border-radius: 4px; border-left: 6px solid var(--color-principal);">
+            <h3 style="margin-top: 0; color: var(--color-principal); text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;">Ficha Metodológica del Proyecto</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; font-size: 0.95rem; color: #555;">
+                <div><strong>Autor:</strong><br>Jorge Omar Osorio Parada</div>
+                <div><strong>Institución:</strong><br>Grupo Educativo Siglo 21</div>
+                <div><strong>Formato de Entrega:</strong><br>Proyecto de Titulación Multiformato</div>
+                <div><strong>Año de Producción:</strong><br>2026</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lectura" class="seccion">
+        <div id="menu-lectura">
+            <h2 style="color: var(--color-principal);">Índice de Lectura Digital</h2>
+            <p style="color: #666; margin-bottom: 2rem;">Inicia sesión en la pestaña "Mi Cuenta" para guardar automáticamente tu progreso de lectura en cada capítulo.</p>
+            <div class="grid-capitulos" id="grid-texto"></div>
+        </div>
+        
+        <div id="visor-texto" class="vista-contenido">
+            <button class="btn-regresar" onclick="regresarAlMenu('lectura')">← Volver al Índice</button>
+            <h2 id="titulo-capitulo-texto" style="color: var(--color-principal); text-align: center; margin-top: 2rem; font-size: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;"></h2>
+            <div id="cuerpo-capitulo-texto"></div>
+            <div style="text-align: center; margin-top: 3rem;">
+                <button id="btn-marcar-leido" class="btn-regresar" style="background: #2e7d32; border-color: #2e7d32;">✓ Marcar capítulo como leído</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="audiolibro" class="seccion">
+        <h2 style="color: var(--color-principal);">Producción de Audiolibro</h2>
+        <p style="color: #666; margin-bottom: 2.5rem;">Reproducción secuencial sonora directa. Tu avance auditivo se guardará al finalizar cada pista.</p>
+        <div id="lista-audio" style="margin-top: 2rem;"></div>
+    </div>
+
+    <div id="cuenta" class="seccion">
+        <h2 style="color: var(--color-principal); text-align: center;">Tu Progreso en la Obra</h2>
+        
+        <div id="auth-anonimo" class="contenedor-auth">
+            <h3 style="margin-top: 0; text-align: center;">Ingresar a la Plataforma</h3>
+            <form id="form-login">
+                <div class="campo-form">
+                    <label for="auth-email">Correo Electrónico:</label>
+                    <input type="email" id="auth-email" required>
+                </div>
+                <div class="campo-form">
+                    <label for="auth-password">Contraseña:</label>
+                    <input type="password" id="auth-password" required>
+                </div>
+                <button type="submit" class="btn-accion" style="margin-bottom: 0.8rem;">Iniciar Sesión</button>
+                <button type="button" onclick="manejarRegistro()" class="btn-accion" style="background: transparent; color: var(--color-principal);">Crear una Cuenta Nueva</button>
+            </form>
+        </div>
+
+        <div id="auth-perfil" style="display: none; background: white; padding: 2rem; border: 1px solid #e0e0e0; border-radius: 6px;">
+            <h3>¡Hola de nuevo!</h3>
+            <p>Desde aquí guardamos de manera segura tu progreso de los capítulos leídos y pistas de audiolibro completadas.</p>
+            <button onclick="cerrarSesion()" class="btn-regresar" style="background: #c62828; border-color: #c62828; color: white;">Cerrar Sesión de la Cuenta</button>
+        </div>
+    </div>
+
+    <div id="contacto" class="seccion">
+        <h2 style="color: var(--color-principal);">Contacto y Sugerencias</h2>
+        <p style="color: #666;">Envía directamente tus dudas, comentarios estructurales de la obra o reportes de fallos en el sistema.</p>
+        
+        <div class="form-soporte">
+            <form id="form-sugerencias">
+                <div class="campo-form">
+                    <label for="contacto-email">Tu Correo Electrónico:</label>
+                    <input type="email" id="contacto-email" required>
+                </div>
+                <div class="campo-form">
+                    <label for="contacto-tipo">Tipo de Mensaje:</label>
+                    <select id="contacto-tipo" required>
+                        <option value="Sugerencia">Sugerencia Literaria / Trama</option>
+                        <option value="Error de Pagina">Error Técnico en la Página Web</option>
+                        <option value="Problema de Audio">Problema de Reproducción de Audio</option>
+                    </select>
+                </div>
+                <div class="campo-form">
+                    <label for="contacto-mensaje">Mensaje / Comentarios:</label>
+                    <textarea id="contacto-mensaje" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn-accion">Enviar Comentarios Directos</button>
+            </form>
+            <div id="msg-contacto-status" style="margin-top: 1rem; text-align: center; font-weight: bold; display: none;"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p style="margin: 0; color: var(--color-secundario); font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase;">Más Allá del Muro (MADM)</p>
+        <p style="margin: 0.5rem 0 0 0; opacity: 0.8;">© 2026 — Jorge Omar Osorio Parada. Todos los derechos reservados.</p>
+    </footer>
+
+<script>
+    // 1. CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = "https://TU_PROYECTO.supabase.co"; 
+    const SUPABASE_ANON_KEY = "TU_LLAVE_ANON_PUBLICA";
+    
+    let supabase = null;
+    if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // Base de datos de capítulos unificada para el índice (Los textos se cargan dinámicamente desde /Caps/)
+    const capitulos = [
+        { numero: 1, titulo: "Capítulo 1: La Torre de Fortuna", archivoAudio: "audios/capitulo1.mp3" },
+        { numero: 2, titulo: "Capítulo 2: Los Sectores Bajos", archivoAudio: "audios/capitulo2.mp3" },
+        { numero: 3, titulo: "Capítulo 3: El Distrito Periférico", archivoAudio: "audios/capitulo3.mp3" },
+        { numero: 4, titulo: "Capítulo 4: Sombras en el Muro", archivoAudio: "audios/capitulo4.mp3" },
+        { numero: 5, titulo: "Capítulo 5: Infiltración", archivoAudio: "audios/capitulo5.mp3" },
+        { numero: 6, titulo: "Capítulo 6: Luces de Fortuna", archivoAudio: "audios/capitulo6.mp3" },
+        { numero: 7, titulo: "Capítulo 7: La Apuesta Temeraria", archivoAudio: "audios/capitulo7.mp3" },
+        { numero: 8, titulo: "Capítulo 8: Secretos de la Torre", archivoAudio: "audios/capitulo8.mp3" },
+        { numero: 9, titulo: "Capítulo 9: El Reclutamiento", archivoAudio: "audios/capitulo9.mp3" },
+        { numero: 10, titulo: "Capítulo 10: Lazos de Sangre", archivoAudio: "audios/capitulo10.mp3" },
+        { numero: 11, titulo: "Capítulo 11: Juegos de Poder", archivoAudio: "audios/capitulo11.mp3" },
+        { numero: 12, titulo: "Capítulo 12: Rebelión Silenciosa", archivoAudio: "audios/capitulo12.mp3" },
+        { numero: 13, titulo: "Capítulo 13: La Caída del Azar", archivoAudio: "audios/capitulo13.mp3" },
+        { numero: 14, titulo: "Capítulo 14: El Manuscrito Oculto", archivoAudio: "audios/capitulo14.mp3" },
+        { numero: 15, titulo: "Capítulo 15: Traición en la Cumbre", archivoAudio: "audios/capitulo15.mp3" },
+        { numero: 16, titulo: "Capítulo 16: El Escape Imposible", archivoAudio: "audios/capitulo16.mp3" },
+        { numero: 17, titulo: "Capítulo 17: Ecos de Astra", archivoAudio: "audios/capitulo17.mp3" },
+        { numero: 18, titulo: "Capítulo 18: La Grieta del Control", archivoAudio: "audios/capitulo18.mp3" },
+        { numero: 19, titulo: "Capítulo 19: El Enfrentamiento Final", archivoAudio: "audios/capitulo19.mp3" },
+        { numero: 20, titulo: "Capítulo 20: El Horizonte Libre", archivoAudio: "audios/capitulo20.mp3" }
+    ];
+
+    let usuarioLogueado = null;
+    let capituloActualAbierto = null;
+
+    // Monitoreo de autenticación en Supabase
+    if (supabase) {
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                usuarioLogueado = session.user;
+                document.getElementById('status-usuario').innerText = `Cuenta activa: ${usuarioLogueado.email}`;
+                document.getElementById('contacto-email').value = usuarioLogueado.email;
+                document.getElementById('auth-anonimo').style.display = 'none';
+                document.getElementById('auth-perfil').style.display = 'block';
+                cargarProgresoDesdeServidor();
+            } else {
+                usuarioLogueado = null;
+                document.getElementById('status-usuario').innerText = "";
+                document.getElementById('auth-anonimo').style.display = 'block';
+                document.getElementById('auth-perfil').style.display = 'none';
+                limpiarCheckmarks();
+            }
+        });
+    }
+
+    // Navegación entre secciones
+    function cambiarSeccion(idSeccion) {
+        document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
+        document.getElementById(idSeccion).classList.add('activa');
+        if(idSeccion === 'lectura') regresarAlMenu('lectura');
+    }
+
+    // Renderizar cuadrícula de lectura
+    const gridTexto = document.getElementById('grid-texto');
+    capitulos.forEach(cap => {
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'tarjeta-capitulo';
+        tarjeta.id = `tarjeta-txt-${cap.numero}`;
+        tarjeta.innerHTML = `
+            <div class="check-progreso" id="check-${cap.numero}">✓</div>
+            <img src="portadas/portada${cap.numero}.jpg" alt="Portada Capítulo ${cap.numero}">
+            <strong>${cap.titulo}</strong>
+        `;
+        tarjeta.onclick = () => abrirCapituloTexto(cap);
+        gridTexto.appendChild(tarjeta);
+    });
+
+    // Carga de texto asíncrona desde public/Caps/cap[X].txt
+    async function abrirCapituloTexto(cap) {
+        capituloActualAbierto = cap;
+        document.getElementById('menu-lectura').style.display = 'none';
+        
+        const visor = document.getElementById('visor-texto');
+        const tituloEl = document.getElementById('titulo-capitulo-texto');
+        const cuerpoEl = document.getElementById('cuerpo-capitulo-texto');
+        
+        visor.style.display = 'block';
+        tituloEl.innerText = cap.titulo;
+        cuerpoEl.innerText = "Cargando contenido del manuscrito...";
+
+        try {
+            const respuesta = await fetch(`/Caps/cap${cap.numero}.txt`);
+            if (respuesta.ok) {
+                const textoCapitulo = await respuesta.text();
+                cuerpoEl.innerText = textoCapitulo;
+            } else {
+                cuerpoEl.innerText = "Error: El archivo de texto correspondiente a este capítulo no fue encontrado en el servidor.";
+            }
+        } catch (error) {
+            console.error("Fallo de lectura de archivo:", error);
+            cuerpoEl.innerText = "Error técnico al intentar recuperar los datos del capítulo.";
+        }
+    }
+
+    // Guardado de progreso al dar clic en leído
+    document.getElementById('btn-marcar-leido').onclick = async () => {
+        if (!usuarioLogueado) {
+            alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' para guardar tu avance de lectura.");
+            return;
+        }
+        
+        try {
+            const respuesta = await fetch('/api/progreso', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: usuarioLogueado.id,
+                    capitulo_id: capituloActualAbierto.numero,
+                    leido: true,
+                    escuchado: false
+                })
+            });
+            if (respuesta.ok) {
+                document.getElementById(`check-${capituloActualAbierto.numero}`).style.display = 'flex';
+                alert("¡Progreso de lectura guardado de forma segura!");
+            }
+        } catch (err) {
+            console.error("Error guardando el avance de lectura", err);
+        }
+    };
+
+    // Renderizar lista de audiolibro
+    const listaAudio = document.getElementById('lista-audio');
+    capitulos.forEach(cap => {
+        const itemAudio = document.createElement('div');
+        itemAudio.className = 'reproductor-audio';
+        itemAudio.innerHTML = `
+            <div><strong>${cap.titulo}</strong></div>
+            <audio id="audio-track-${cap.numero}" controls>
+                <source src="${cap.archivoAudio}" type="audio/mpeg">
+            </audio>
+        `;
+        listaAudio.appendChild(itemAudio);
+
+        // Evento de finalización asignado de manera segura tras la carga del DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            const elAudio = document.getElementById(`audio-track-${cap.numero}`);
+            if(elAudio) {
+                elAudio.onended = async () => {
+                    if (usuarioLogueado) {
+                        await fetch('/api/progreso', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: usuarioLogueado.id,
+                                capitulo_id: cap.numero,
+                                leido: false,
+                                escuchado: true
+                            })
+                        });
+                        console.log(`Audio del capítulo ${cap.numero} completado.`);
+                    }
+                };
+            }
+        });
+    });
+
+    function regresarAlMenu(tipo) {
+        if(tipo === 'lectura') {
+            document.getElementById('menu-lectura').style.display = 'block';
+            document.getElementById('visor-texto').style.display = 'none';
+        }
+    }
+
+    // Lógica del formulario de autenticación (Login/Registro)
+    document.getElementById('form-login').onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+
+        if(!supabase) return alert("Error: Conexión con Supabase no inicializada.");
+        
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(`Error de acceso: ${error.message}`);
+    };
+
+    async function manejarRegistro() {
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+
+        if(!email || !password) return alert("Por favor ingresa un correo y contraseña.");
+        if(!supabase) return;
+
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+            alert(`Error en registro: ${error.message}`);
+        } else {
+            alert("¡Cuenta solicitada! Revisa tu bandeja de correo para verificar tu enlace de confirmación.");
+        }
+    }
+
+    async function cerrarSesion() {
+        if(supabase) await supabase.auth.signOut();
+    }
+
+    async function cargarProgresoDesdeServidor() {
+        if (!usuarioLogueado) return;
+        try {
+            const res = await fetch(`/api/progreso?user_id=${usuarioLogueado.id}`);
+            const json = await res.json();
+            if (json.success && json.progreso) {
+                json.progreso.forEach(p => {
+                    if (p.leido) {
+                        const marker = document.getElementById(`check-${p.capitulo_id}`);
+                        if(marker) marker.style.display = 'flex';
+                    }
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function limpiarCheckmarks() {
+        document.querySelectorAll('.check-progreso').forEach(el => el.style.display = 'none');
+    }
+
+    // Envío del formulario de sugerencias
+    document.getElementById('form-sugerencias').onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('contacto-email').value;
+        const tipo = document.getElementById('contacto-tipo').value;
+        const mensaje = document.getElementById('contacto-mensaje').value;
+        const statusEl = document.getElementById('msg-contacto-status');
+
+        statusEl.style.display = "block";
+        statusEl.style.color = "orange";
+        statusEl.innerText = "Despachando mensaje...";
+
+        try {
+            const respuesta = await fetch('/api/contacto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, tipo, mensaje })
+            });
+
+            if (respuesta.ok) {
+                statusEl.style.color = "green";
+                statusEl.innerText = "¡Mensaje enviado con éxito al autor!";
+                document.getElementById('contacto-mensaje').value = "";
+            } else {
+                statusEl.style.color = "red";
+                statusEl.innerText = "Error al intentar despachar tu reporte.";
+            }
+        } catch (err) {
+            statusEl.style.color = "red";
+            statusEl.innerText = "Fallo de conexión con el servidor de correo.";
+        }
+    };
+
+    // Integración de Stripe
+    document.getElementById('btn-comprar-stripe').onclick = () => {
+        alert("Enrutando de forma encriptada al portal seguro de procesamiento bancario de Stripe...");
+    };
+</script>
+</body>
+</html>
