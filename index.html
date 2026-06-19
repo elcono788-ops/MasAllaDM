@@ -533,6 +533,31 @@
         `;
         listaAudio.appendChild(itemAudio);
 
+        // Asignación directa e inmediata sin listeners globales anidados
+        const elAudio = itemAudio.querySelector('audio');
+        if (elAudio) {
+            elAudio.onended = async () => {
+                if (usuarioLogueado) {
+                    try {
+                        await fetch('/api/progreso', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: usuarioLogueado.id,
+                                capitulo_id: cap.numero,
+                                leido: false,
+                                escuchado: true
+                            })
+                        });
+                        console.log(`Audio del capítulo ${cap.numero} completado.`);
+                    } catch (err) {
+                        console.error("Error al guardar progreso de audio:", err);
+                    }
+                }
+            };
+        }
+    });
+
         // Evento de finalización asignado de manera segura tras la carga del DOM
         window.addEventListener('DOMContentLoaded', () => {
             const elAudio = document.getElementById(`audio-track-${cap.numero}`);
