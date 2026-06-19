@@ -1,14 +1,12 @@
-import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.CORREO_EMISOR,
-    pass: process.env.CORREO_PASSWORD // Tu contraseña de aplicación de Google
-  }
-});
+// Usamos los nombres exactos de las variables que ya están en tu panel de Vercel
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_nadm005_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_nadm005_SUPABASE_ANON_KEY
+);
+
+// ... el resto del código (handler) se queda exactamente igual
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
