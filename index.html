@@ -6,6 +6,8 @@
     <title>MADM - Jorge Osorio</title>
     <!-- Se eliminó el script de Supabase del head para cargarlo dinámicamente y seguro en el JS -->
     <script src="https://js.stripe.com/v3/"></script>
+    <!-- Agregamos FontAwesome para los iconos de redes sociales -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --color-principal: #0d2c27;
@@ -374,7 +376,21 @@
                 </div>
                 <button type="submit" class="btn-accion">Enviar Comentarios Directos</button>
             </form>
+            
             <div id="msg-contacto-status" style="margin-top: 1rem; text-align: center; font-weight: bold; display: none;"></div>
+
+            <!-- SECCIÓN DE REDES SOCIALES AGREGADA -->
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #f0f0f0; text-align: center;">
+                <p style="font-weight: bold; color: var(--color-principal); margin-bottom: 1rem;">Sígueme en mis redes sociales</p>
+                <div>
+                    <a href="https://www.instagram.com/madm_2026?igsh=MTY0NG1oaDI0dXU0eQ%3D%3D&utm_source=qr" target="_blank" style="display: inline-block; margin: 0 1rem; color: var(--color-principal); font-size: 2.2rem; transition: all 0.3s ease;" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://jorgeoosorio.artstation.com" target="_blank" style="display: inline-block; margin: 0 1rem; color: var(--color-principal); font-size: 2.2rem; transition: all 0.3s ease;" title="ArtStation">
+                        <i class="fab fa-artstation"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -392,20 +408,19 @@
     }
 
     // 2. DEFINIR VARIABLES GLOBALES
-    // ¡ATENCIÓN!: Esta variable se declara UNA SOLA VEZ aquí. Nunca la repitas en otro lado del script.
     let supabase = null; 
     let usuarioLogueado = null;
     let capituloActualAbierto = null;
 
     const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
     // ⚠️ REEMPLAZA ESTO POR TU CLAVE REAL DE SUPABASE (Sin los puntos suspensivos)
-    const SUPABASE_ANON_KEY = "sb_publishable_0b0yHH2NC1uJMiWzyi7RcQ_vq0u_..."; 
+    const SUPABASE_ANON_KEY = "sb_publishable_ObOyHH2NC1uJMIwZyi7RcQ_vq0u_AXD"; 
 
     // 3. CARGAR SUPABASE DE FORMA DINÁMICA Y SEGURA
     function cargarSupabase() {
         return new Promise((resolver, rechazar) => {
             const script = document.createElement('script');
-            script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
+            script.src = "https://unpkg.com/@supabase/supabase-js@2/umd/supabase.js";
             script.onload = () => {
                 if (window.supabase && typeof window.supabase.createClient === 'function') {
                     resolver(window.supabase);
@@ -444,7 +459,6 @@
             }
         })
         .catch((error) => {
-            // Si falla la carga, no pasa nada. El menú de navegación ya se cargó (en el paso 1).
             console.warn("⚠️ La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.", error.message);
         });
 
@@ -473,7 +487,6 @@
         { numero: 20, titulo: "Capítulo 20: El Horizon Libre", archivoAudio: "audios/audio20.mp3" }
     ];
 
-    // Renderizar cuadrícula de lectura
     const gridTexto = document.getElementById('grid-texto');
     capitulos.forEach(cap => {
         const tarjeta = document.createElement('div');
@@ -488,7 +501,6 @@
         gridTexto.appendChild(tarjeta);
     });
 
-    // Carga de texto asíncrona desde public/Caps/cap[X].txt
     async function abrirCapituloTexto(cap) {
         capituloActualAbierto = cap;
         document.getElementById('menu-lectura').style.display = 'none';
@@ -515,7 +527,6 @@
         }
     }
 
-    // Guardado de progreso al dar clic en leído
     document.getElementById('btn-marcar-leido').onclick = async () => {
         if (!usuarioLogueado) {
             alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' para guardar tu avance de lectura.");
@@ -542,7 +553,6 @@
         }
     };
 
-    // Renderizar lista de audiolibro
     const listaAudio = document.getElementById('lista-audio');
     capitulos.forEach(cap => {
         const itemAudio = document.createElement('div');
@@ -586,7 +596,6 @@
         }
     }
 
-    // Lógica del formulario de autenticación (Login)
     document.getElementById('form-login').onsubmit = async (e) => {
         e.preventDefault();
         const email = document.getElementById('auth-email').value;
@@ -637,7 +646,6 @@
         document.querySelectorAll('.check-progreso').forEach(el => el.style.display = 'none');
     }
 
-    // Envío del formulario de sugerencias
     document.getElementById('form-sugerencias').onsubmit = async (e) => {
         e.preventDefault();
         const email = document.getElementById('contacto-email').value;
@@ -670,7 +678,6 @@
         }
     };
 
-    // Integración de Stripe
     document.getElementById('btn-comprar-stripe').onclick = () => {
         alert("Enrutando de forma encriptada al portal seguro de procesamiento bancario de Stripe...");
     };
