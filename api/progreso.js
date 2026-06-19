@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-
+// Usamos los nombres exactos de las variables que ya están en tu panel de Vercel
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_nadm005_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_nadm005_SUPABASE_ANON_KEY
+);
+// ... el resto del código (handler) se queda exactamente igual
 export default async function handler(req, res) {
   // Permitir solo peticiones POST (para guardar) y GET (para consultar)
   if (req.method === 'POST') {
