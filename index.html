@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MADM - Jorge Osorio</title>
-    <!-- Se eliminó el script de Supabase del head para cargarlo dinámicamente y seguro en el JS -->
+    <!-- Stripe y FontAwesome -->
     <script src="https://js.stripe.com/v3/"></script>
-    <!-- Agregamos FontAwesome para los iconos de redes sociales -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -256,7 +255,6 @@
     </header>
 
     <nav>
-        <!-- Agregado return false; para evitar que la URL se ensucie con un # -->
         <a href="#" onclick="cambiarSeccion('inicio'); return false;">Inicio</a>
         <a href="#" onclick="cambiarSeccion('lectura'); return false;">Lectura Digital</a>
         <a href="#" onclick="cambiarSeccion('audiolibro'); return false;">Audiolibro</a>
@@ -266,7 +264,6 @@
 
     <div id="inicio" class="seccion activa">
         <div class="info-libro">
-            <!-- Ruta con "/" al inicio para evitar error 404 en Vercel -->
             <img src="/portadas/portada_principal.jpg" alt="Portada Principal de Más Allá del Muro" class="portada-principal-img">
             
             <div class="info-texto-container">
@@ -379,7 +376,7 @@
             
             <div id="msg-contacto-status" style="margin-top: 1rem; text-align: center; font-weight: bold; display: none;"></div>
 
-            <!-- SECCIÓN DE REDES SOCIALES AGREGADA -->
+            <!-- SECCIÓN DE REDES SOCIALES -->
             <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #f0f0f0; text-align: center;">
                 <p style="font-weight: bold; color: var(--color-principal); margin-bottom: 1rem;">Sígueme en mis redes sociales</p>
                 <div>
@@ -400,7 +397,7 @@
     </footer>
 
 <script>
-    // 1. DECLARAR LA NAVEGACIÓN AL INICIO (Para que el menú nunca falle, incluso si Supabase se cae)
+    // 1. DECLARAR LA NAVEGACIÓN AL INICIO (El menú nunca debe fallar)
     window.cambiarSeccion = function(idSeccion) {
         document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
         document.getElementById(idSeccion).classList.add('activa');
@@ -413,32 +410,16 @@
     let capituloActualAbierto = null;
 
     const SUPABASE_URL = "https://axiymlveecrkkgxgkmzx.supabase.co"; 
-    // ⚠️ REEMPLAZA ESTO POR TU CLAVE REAL DE SUPABASE (Sin los puntos suspensivos)
+    // ⚠️ REEMPLAZA ESTO POR TU CLAVE "Publishable key" COMPLETA del panel de Supabase (Project Settings -> API).
     const SUPABASE_ANON_KEY = "sb_publishable_ObOyHH2NC1uJMIwZyi7RcQ_vq0u_AXD"; 
 
-    // 3. CARGAR SUPABASE DE FORMA DINÁMICA Y SEGURA
-    function cargarSupabase() {
-        return new Promise((resolver, rechazar) => {
-            const script = document.createElement('script');
-            script.src = "https://unpkg.com/@supabase/supabase-js@2/umd/supabase.js";
-            script.onload = () => {
-                if (window.supabase && typeof window.supabase.createClient === 'function') {
-                    resolver(window.supabase);
-                } else {
-                    rechazar(new Error("El script cargó pero no expuso la variable 'window.supabase'"));
-                }
-            };
-            script.onerror = () => rechazar(new Error("No se pudo descargar el script de Supabase"));
-            document.head.appendChild(script);
-        });
-    }
-
-    // 4. CONFIGURACIÓN DE AUTENTICACIÓN (Solo se ejecutará si la librería de Supabase carga)
-    cargarSupabase()
-        .then((libSupabase) => {
-            supabase = libSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 3. CARGAR SUPABASE USANDO IMPORTACIÓN DINÁMICA NATIVA (ES Modules).
+    // Esto reemplaza el intento de descargar un archivo .js que ya no existe en Supabase 2.
+    import('https://esm.sh/@supabase/supabase-js@2')
+        .then(({ createClient }) => {
+            supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log("✅ Conexión con Supabase establecida correctamente.");
-            
+
             if (supabase) {
                 supabase.auth.onAuthStateChange((event, session) => {
                     if (session) {
@@ -459,6 +440,7 @@
             }
         })
         .catch((error) => {
+            // Si falla, la página sigue funcionando perfectamente para leer y escuchar.
             console.warn("⚠️ La librería de Supabase no cargó. El inicio de sesión estará deshabilitado.", error.message);
         });
 
