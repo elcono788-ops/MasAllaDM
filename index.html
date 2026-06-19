@@ -660,25 +660,25 @@
         }
     };
 
-    document.getElementById('btn-comprar-stripe').onclick = async () => {
+ document.getElementById('btn-comprar-stripe').onclick = async () => {
     if (!usuarioLogueado) {
-        alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' antes de proceder con tu compra.");
+        alert("Por favor, inicia sesión en la pestaña 'Mi Cuenta' antes de solicitar tu referencia de pago.");
         cambiarSeccion('cuenta');
         return;
     }
 
-    const nombre = prompt("Ingresa tu(s) Nombre(s):");
-    const apellido = prompt("Ingresa tus Apellidos:");
+    const nombre = prompt("Ingresa tu Nombre:");
+    const apellido = prompt("Ingresa tu Apellido:");
     
     if (!nombre || !apellido) {
-        alert("Los datos son obligatorios para generar tu orden de transferencia única.");
+        alert("El nombre y apellido son obligatorios para generar tu referencia personalizada.");
         return;
     }
 
     try {
-        alert("Generando los datos de transferencia SPEI de Stripe. Por favor espera...");
+        alert("Generando tu referencia de transferencia única...");
         
-        const respuesta = await fetch('/api/checkout', {
+        const respuesta = await fetch('/api/crear-orden-manual', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -689,18 +689,32 @@
             })
         });
 
-        const sesion = await respuesta.json();
+        const datosOrden = await respuesta.json();
 
-        if (sesion.id) {
-            // Inicializa Stripe cargado desde el CDN en tu HTML
-            const stripeCliente = Stripe("TU_CLAVE_PUBLICA_PK_TEST_AQUI");
-            await stripeCliente.redirectToCheckout({ sessionId: sesion.id });
+        if (datosOrden.success) {
+            // Mostramos los datos bancarios y la referencia en pantalla
+            alert(`
+       ■ ORDEN DE TRANSFERENCIA GENERADA ■
+       --------------------------------------------------
+       Por favor, realiza tu pago con los siguientes datos:
+       
+       Banco: BBVA
+       CLABE: 012 180 01535337207 4
+       Beneficiario: Jorge Osorio
+       Monto: $100.00 MXN
+       
+       ⚠️ MUY IMPORTANTE ⚠️
+       En el "Concepto de Pago" de tu banco debes poner exactamente:
+       ${datosOrden.referencia}
+       
+       Te hemos enviado también estas instrucciones a tu correo electrónico. Una vez que verifiquemos el depósito, se te liberará el PDF automáticamente.
+            `);
         } else {
-            alert("No se pudo generar la orden de pago por transferencia.");
+            alert("Error al generar la orden: " + datosOrden.error);
         }
     } catch (err) {
         console.error("Error:", err);
-        alert("Ocurrió un fallo de conexión.");
+        alert("Ocurrió un fallo de conexión al procesar la orden.");
     }
 };
 </script>
